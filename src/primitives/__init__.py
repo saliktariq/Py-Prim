@@ -1,7 +1,8 @@
-from .core import Primitive, Integer, Float, String, Boolean, Bytes
+from .core import Primitive, PrimitiveTypeError, Integer, Float, String, Boolean, Bytes
 
 __all__ = [
     "Primitive",
+    "PrimitiveTypeError",
     "Integer",
     "Float",
     "String",

@@ -8,7 +8,7 @@ Strict Type Validation: Fails fast if you try to assign a string to an integer, 
 
 Standardized API: Every type implements .is_empty(), .is_null(), and .reset().
 
-Magic Methods Support: Compares cleanly with standard Python types using == and integrates seamlessly with if statements.
+Magic Methods Support: Compares cleanly with standard Python types, supports the usual operators, and integrates seamlessly with if statements.
 
 Zero Dependencies: Built entirely on the Python standard library.
 
@@ -52,7 +52,7 @@ from primitives import Integer
 
 score = Integer(100)
 
-#### This will raise a ValueError: "Invalid value for Integer: 100.5"
+#### This will raise a PrimitiveTypeError, which is also a ValueError: "Integer requires int, got float"
 score.value = 100.5 
 
 ### This library strictly isolates Booleans from Integers.
@@ -75,6 +75,68 @@ print(name.value)       # ""
 ### Null checking
 balance = Float(None)
 print(balance.is_null()) # True
+
+## Type Lock
+
+A rejected assignment raises `PrimitiveTypeError`, which is both a `TypeError` and a `ValueError`, and leaves the stored value unchanged.
+
+```python
+from primitives import Float, Integer
+
+count = Integer(5)
+count.value = None  # Raises PrimitiveTypeError
+count.clear()       # The explicit way back to null
+
+price = Float(5)    # Ints are converted, so price.value is 5.0
+```
+
+### Typed class attributes
+
+Declare a type on a class to lock the attribute itself. It reads and writes as a plain value.
+
+```python
+from primitives import Integer
+
+class User:
+    age = Integer(0)
+
+user = User()
+user.age = 30
+user.age += 1       # 31
+user.age = "hello"  # Raises PrimitiveTypeError
+```
+
+### Operators
+
+Operators return plain Python values. In-place operators keep the wrapper and its type lock.
+
+```python
+from primitives import Integer
+
+count = Integer(5)
+count + 1.5   # 6.5, a plain float
+count += 1    # count is still an Integer, now holding 6
+count += 0.5  # Raises PrimitiveTypeError
+count /= 2    # Raises PrimitiveTypeError, because the result is a float
+```
+
+`==` and ordering only work between matching types, so `Integer(1) == True` is `False` and `Integer(1) < 1.5` raises `TypeError`. `Float` also compares with plain ints.
+
+### Custom types
+
+Override `is_valid` to add rules. The exact type is always checked first. Set any attributes before calling `super().__init__()`.
+
+```python
+from primitives import Integer
+
+class Age(Integer):
+    def is_valid(self):
+        return self._value >= 0
+```
+
+### Limits
+
+Python never calls a class when a variable is rebound, so `count = "hello"` cannot be blocked at runtime. The package ships type hints, so a type checker such as mypy will flag it.
 
 ## License
 MIT License
