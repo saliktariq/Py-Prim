@@ -15,5 +15,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
 [tool.setuptools.package-data]
 primitives = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]

@@ -13,8 +13,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # If any test or type check fails, the build and upload below are skipped.
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+
   build:
     name: Build package
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
