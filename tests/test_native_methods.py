@@ -11,8 +11,9 @@ PAIRS = [(int, Integer), (float, Float), (str, String), (bool, Boolean), (bytes,
 
 EMOJI = chr(0x1F600)
 
-# A pickle helper: the wrappers save their state through __getstate__ instead.
-NOT_NEEDED = {"__getnewargs__", "__setformat__"}
+# The wrappers pickle through __getstate__. The other two names are a CPython test hook
+# that changes float behavior for the whole interpreter, spelled differently by version.
+NOT_NEEDED = {"__getnewargs__", "__set_format__", "__setformat__"}
 # These would let a bool act as a number, which the type lock refuses on purpose.
 BOOLEAN_REFUSED = {
     "__abs__", "__add__", "__ceil__", "__divmod__", "__float__", "__floor__", "__floordiv__",
