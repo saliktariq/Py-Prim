@@ -15,6 +15,10 @@ from typing import (
     overload,
 )
 
+from ._methods import _BooleanMethods, _BytesMethods, _FloatMethods, _IntegerMethods
+from ._native import _NativeBoolean, _NativeBytes, _NativeFloat, _NativeInteger, _NativeString
+from ._string_methods import _StringMethods
+
 T = TypeVar("T")
 _Method = Callable[..., Any]
 
@@ -315,6 +319,7 @@ class _Sequence(Primitive[T]):
     __mul__, __rmul__, __imul__ = _operators(operator.mul)
     # printf-style formatting accepts any argument, including bool and None.
     __mod__ = _unary(lambda text, args: text % _raw(args))
+    __rmod__ = _reflected(operator.mod)
     __imod__ = _inplace(operator.mod)
 
     __len__ = _unary(len)
@@ -327,7 +332,7 @@ class _Sequence(Primitive[T]):
 # Derived Classes
 # ==========================================
 
-class Integer(_Numeric[int]):
+class Integer(_IntegerMethods, _NativeInteger, _Numeric[int]):
     __slots__ = ()
     _type = int
 
@@ -343,7 +348,7 @@ class Integer(_Numeric[int]):
         return 0
 
 
-class Float(_Numeric[float]):
+class Float(_FloatMethods, _NativeFloat, _Numeric[float]):
     __slots__ = ()
     _type = float
     _also_equal = (int,)
@@ -361,7 +366,7 @@ class Float(_Numeric[float]):
         return value
 
 
-class String(_Sequence[str]):
+class String(_StringMethods, _NativeString, _Sequence[str]):
     __slots__ = ()
     _type = str
 
@@ -373,7 +378,7 @@ class String(_Sequence[str]):
         return self._value is None or not self._value.strip()
 
 
-class Boolean(Primitive[bool]):
+class Boolean(_BooleanMethods, _NativeBoolean, Primitive[bool]):
     __slots__ = ()
     _type = bool
 
@@ -385,7 +390,7 @@ class Boolean(Primitive[bool]):
         return False
 
 
-class Bytes(_Sequence[bytes]):
+class Bytes(_BytesMethods, _NativeBytes, _Sequence[bytes]):
     __slots__ = ()
     _type = bytes
 
