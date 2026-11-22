@@ -134,6 +134,86 @@ class Age(Integer):
         return self._value >= 0
 ```
 
+### Built-in Methods
+
+Every type comes with parsing, conversion, comparison, bit manipulation and text methods, plus constants such as `Integer.MAX_VALUE`. Method names are camelCase.
+
+```python
+from primitives import Boolean, Float, Integer, String
+
+Integer.parseInt("ff", 16)         # 255
+Integer.MAX_VALUE                  # 2147483647
+Integer(12).bitCount()             # 2, the instance fills the first argument
+Integer.toHexString(-1)            # String('ffffffff')
+Float.floatToIntBits(1.0)          # 1065353216
+Boolean.parseBoolean("TRUE")       # True
+
+String("  Hello ").trim().toUpperCase()         # String('HELLO')
+String("a1b22").replaceAll(r"\d+", "#")         # String('a#b#')
+String("boo:and:foo").split(":", 2)             # [String('boo'), String('and:foo')]
+String.format("%05d|%,.2f", 42, 1234.5)         # String('00042|1,234.50')
+```
+
+Numbers, booleans and single characters come back as plain Python values. Text and boxed values such as `Integer.valueOf("5")` come back as wrappers, so calls can be chained.
+
+These methods read each value at a fixed width:
+
+- `Integer` is 32-bit. Arithmetic wraps on overflow, and a stored value outside the 32-bit range raises `OverflowError` instead of giving a wrong answer.
+- `Float` is 32-bit, while `.value` keeps the full Python float. `Float(0.1).doubleValue()` is `0.10000000149011612`, and `Float(1e300).isInfinite()` is `True`.
+- `String` indexes count UTF-16 units, so `String("😀").length()` is 2 while `len()` stays 1.
+- `Bytes` numeric methods need a value of exactly one byte, read as signed.
+
+Malformed input and invalid format or regex patterns raise `ValueError`. Out-of-range indexes raise `IndexError`, null arguments raise `TypeError`, and division by zero raises `ZeroDivisionError`.
+
+A few details to keep in mind:
+
+- Constructors stay type-locked, so use `Integer.valueOf("5")` to parse text. `String.fromBytes` and `String.fromCodePoints` build a `String` from bytes or code points.
+- `String.isEmpty()` is true only for length 0, while `is_empty()` also treats whitespace as empty.
+- `Integer.getInteger` and `Boolean.getBoolean` read environment variables.
+- `String.format` uses English formatting and raises `ValueError` for other locales. Pass a locale with `locale="en-US"`.
+- Regex patterns are translated to Python's `re`. Possessive quantifiers and atomic groups need Python 3.11+. `\G`, `\X`, `\b{g}`, `(?U)`, and Unicode script or block properties raise `ValueError` rather than matching differently.
+
+### Native Python Methods
+
+Every public method and attribute of `int`, `float`, `str`, `bytes` and `bool` also works on the matching type, with the same arguments and the same plain Python result. Wrappers can be passed as arguments.
+
+```python
+from primitives import Bytes, Float, Integer, String
+
+String("hello world").title()      # 'Hello World'
+String("a b c").split()            # ['a', 'b', 'c']
+String("report.txt").removesuffix(".txt")  # 'report'
+Integer(255).bit_length()          # 8
+Integer(5).to_bytes(2, "big")      # b'\x00\x05'
+Float(1.5).as_integer_ratio()      # (3, 2)
+Bytes(b"abc").hex()                # '616263'
+```
+
+Newer methods such as `removeprefix` and `bit_count` work on every supported Python version.
+
+A few names have two forms, chosen by how they are called:
+
+| Call | Result |
+| --- | --- |
+| `String("{}").format(1)` | Python's `str.format`, returns `str` |
+| `String.format("%d", 1)` | printf-style, returns `String` |
+| `String(",").join(items)` | Python's `str.join`, returns `str` |
+| `String.join(",", "a", "b")` | delimiter first, returns `String` |
+| `String(s).split()`, or with `sep=` or `maxsplit=` | Python's `str.split`, returns a list of `str` |
+| `String(s).split(pattern, limit)` | regex split, returns a list of `String` |
+| `String(s).strip(chars)` | Python's `str.strip`, returns `str` |
+| `String(s).strip()` | strips whitespace except non-breaking spaces, returns `String` |
+| `String(s).replace(old, new, count)` | Python's `str.replace`, returns `str` |
+| `String(s).replace(old, new)` | replaces all, returns `String` |
+| `Bytes(b).decode()` | Python's `bytes.decode`, returns `str` |
+| `Bytes.decode("0x7f")` | parses a number, returns `Bytes` |
+
+A positional `split` argument is a regex, so `String("a.b").split(".")` returns `[]` because `.` matches every character. Use `split(sep=".")` for a literal separator.
+
+For the plain Python behavior in every case, call the method on `.value`, as in `String("a.b").value.split(".")`.
+
+Two native behaviors are left out on purpose. Wrappers are mutable, so they stay unhashable and can't be dictionary keys. `Boolean` still refuses arithmetic, so `Boolean(True) + 1` raises `TypeError`.
+
 ### Limits
 
 Python never calls a class when a variable is rebound, so `count = "hello"` cannot be blocked at runtime. The package ships type hints, so a type checker such as mypy will flag it.
